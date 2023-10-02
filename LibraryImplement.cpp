@@ -11,84 +11,8 @@
 Library::Library()
 {
     Library::readBookCsv("books.csv");
-}
-
-void Library::readBookCsv(const std::string &filename)
-{
-    std::ifstream file(filename);
-    if (!file.is_open())
-    {
-        std::cerr << "Error: Unable to open file." << std::endl;
-        return;
-    }
-
-    std::string line;
-    getline(file, line);
-
-    int bookId, bookCount, isbn;
-    std::string authors, original_title;
-
-    while (getline(file, line))
-    {
-        std::istringstream iss(line);
-        std::string token;
-
-        if (getline(iss, token, ','))
-            bookId = std::stoi(token);
-
-        for (int i = 0; i < 3; i++)
-        {
-            getline(iss, token, ',');
-        }
-
-        if (getline(iss, token, ','))
-            bookCount = std::stoi(token);
-
-        if (getline(iss, token, ','))
-            isbn = std::stoi(token);
-
-        getline(iss, token, ',');
-
-        if (std::getline(iss, token, ',') || iss.eof())
-        {
-            authors = token;
-
-            if (token.front() == '\"')
-            {
-                authors.clear();
-                token = token.substr(1, token.length() - 1);
-                authors = token;
-
-                while (!iss.eof())
-                {
-                    std::getline(iss, token, ',');
-                    authors += "," + token;
-
-                    if (token.back() == '\"' || iss.peek() == '\n')
-                    {
-                        break;
-                    }
-                }
-            }
-        }
-
-        getline(iss, token, ',');
-
-        if (getline(iss, token, ','))
-        {
-            original_title = token;
-        }
-
-        // Add each book according to its count
-
-        if (item_count < MAX_ITEM)
-        { // Check for array bounds
-            Book book(item_count, isbn, authors, original_title, bookCount);
-            books[item_count++] = book;
-        }
-    }
-
-    file.close();
+    Library::readMagazineCsv("Magazines.csv");
+    Library::readJournalCsv("journals.csv");
 }
 
 void Library::printAllBooks()
@@ -111,17 +35,23 @@ void Library::borrowBook(int isbn, Student &user)
     {
         if (book.getISBN() == isbn)
         {
-            // current date/time based on current system
+            // Get the current time
             time_t now = time(0);
-            char *dt = ctime(&now);
-            
+            std::string dt = ctime(&now);
+
+            // Calculate due time by adding one month (30 days)
+            struct tm due_tm = *localtime(&now);
+            due_tm.tm_mon += 1; // Add one month
+            time_t due = mktime(&due_tm);
+            std::string ret = ctime(&due);
+
             std::cout << "Student User Id " << user.getId() << " been issued book named " << book.getTitle() << " at " << dt << std::endl;
-            Log log(user.getId(), book.getIdFromISBN(isbn), string(dt));
+            Log log(user.getId(), user.getUserName(), book.getId(), book.getTitle(), dt, ret);
             logs[log_count++] = log;
             return;
         }
     }
-    
+
     std::cout << "Book not found!!" << std::endl;
     return;
 }
@@ -132,19 +62,122 @@ void Library::borrowBook(int isbn, Faculty &user)
     {
         if (book.getISBN() == isbn)
         {
-            // current date/time based on current system
+            // Get the current time
             time_t now = time(0);
-            char *dt = ctime(&now);
-            
+            std::string dt = ctime(&now);
+
+            // Calculate due time by adding one month (30 days)
+            struct tm due_tm = *localtime(&now);
+            due_tm.tm_mon += 6; // Add one month
+            time_t due = mktime(&due_tm);
+            std::string ret = ctime(&due);
+
             std::cout << "Faculty User Id " << user.getId() << " been issued book named " << book.getTitle() << " at " << dt << std::endl;
-            Log log(user.getId(), book.getIdFromISBN(isbn), string(dt));
+            Log log(user.getId(), user.getUserName(), book.getId(), book.getTitle(),dt, ret);
             logs[log_count++] = log;
             return;
         }
     }
 
-    
     std::cout << "Book not found!!" << std::endl;
+    return;
+}
+
+void Library::borrowMagazine(string publication, Student &user)
+{
+    for (Magazine magazine : magazines)
+    {
+        if (magazine.getPublication() == publication)
+        {
+            // Get the current time
+            time_t now = time(0);
+            std::string dt = ctime(&now);
+
+            // Calculate due time by adding one month (30 days)
+            struct tm due_tm = *localtime(&now);
+            due_tm.tm_mon += 1; // Add one month
+            time_t due = mktime(&due_tm);
+            std::string ret = ctime(&due);
+
+            std::cout << "Student User Id " << user.getId() << " been issued Magazine named " << magazine.getPublication() << " which is ranked on " << magazine.getRank() << " at " << dt << std::endl;
+             Log log(user.getId(),user.getUserName(),magazine.getId() ,magazine.getPublication(),dt,ret);
+             logs[log_count++] = log;
+            return;
+        }
+    }
+
+    std::cout << "Magazine not found!!" << std::endl;
+    return;
+}
+
+void Library::borrowMagazine(string publication, Faculty &user)
+{
+    for (Magazine magazine : magazines)
+    {
+        if (magazine.getPublication() == publication)
+        {
+            // Get the current time
+            time_t now = time(0);
+            std::string dt = ctime(&now);
+
+            // Calculate due time by adding one month (30 days)
+            struct tm due_tm = *localtime(&now);
+            due_tm.tm_mon += 6; // Add six month
+            time_t due = mktime(&due_tm);
+            std::string ret = ctime(&due);
+
+            std::cout << "Faculty User Id " << user.getId() << " been issued Magazine named " << magazine.getPublication() << " which is ranked on " << magazine.getRank() << " at " << dt << std::endl;
+            Log log(user.getId(),user.getUserName(),magazine.getId() ,magazine.getPublication(),dt,ret);
+            logs[log_count++] = log;
+            return;
+        }
+    }
+
+    std::cout << "Magazine not found!!" << std::endl;
+    return;
+}
+
+void Library::downloadJournal(std::string name, Student &user)
+{
+
+    for (Journal journal : journals)
+    {
+        if (journal.getJournalName() == name)
+        {
+            // current date/time based on current system
+            time_t now = time(0);
+            std::string dt = ctime(&now);
+
+            std::cout << "Student User Id " << user.getId() << " has given access to journal " << journal.getJournalName() << dt << std::endl;
+            Log log(user.getId(), user.getUserName(),journal.getId(),journal.getJournalName(), dt,"Not Applicable");
+            logs[log_count++] = log;
+            return;
+        }
+    }
+
+    std::cout << "Journal not found!!" << std::endl;
+    return;
+}
+
+void Library::downloadJournal(std::string name, Faculty &user)
+{
+
+    for (Journal journal : journals)
+    {
+        if (journal.getJournalName() == name)
+        {
+            // current date/time based on current system
+            time_t now = time(0);
+            char *dt = ctime(&now);
+
+            std::cout << "Faculty User Id " << user.getId() << " has given access to journal " << journal.getJournalName() << dt << std::endl;
+            Log log(user.getId(), user.getUserName(),journal.getId(),journal.getJournalName(), dt,"Not Applicable");
+            logs[log_count++] = log;
+            return;
+        }
+    }
+
+    std::cout << "Journal not found!!" << std::endl;
     return;
 }
 
@@ -159,8 +192,8 @@ void Library::signUp(int choice)
         cin >> name;
         Student student(user_count, name);
         students[user_count++] = student;
-        std::cout << student.getUserName() <<"!! You are regestered in the Library. \n\n"
-              << std::endl;
+        std::cout << student.getUserName() << "!! You are regestered in the Library. \n\n"
+                  << std::endl;
         takeRequest(student);
     }
     else
@@ -169,8 +202,8 @@ void Library::signUp(int choice)
         cin >> name;
         Faculty facul(user_count, name);
         faculty[user_count++] = facul;
-        std::cout << facul.getUserName() <<"!! You are regestered in the Library. \n\n"
-              << std::endl;
+        std::cout << facul.getUserName() << "!! You are regestered in the Library. \n\n"
+                  << std::endl;
         takeRequest(facul);
     }
 }
@@ -184,10 +217,11 @@ void Library::signIn(int id, int choice)
         {
             if (student.getId() == id)
             {
-                
-                std::cout << "\n\n" << std::endl;
+
+                std::cout << "\n\n"
+                          << std::endl;
                 std::cout << "Welcome " << student.getUserName() << " to the Library!!" << std::endl;
-                 
+
                 takeRequest(student);
                 return;
             }
@@ -199,8 +233,9 @@ void Library::signIn(int id, int choice)
         {
             if (faculty.getId() == id)
             {
-                 
-                std::cout << "\n\n" << std::endl;
+
+                std::cout << "\n\n"
+                          << std::endl;
                 std::cout << "Welcome " << faculty.getUserName() << " to the Library!!" << std::endl;
                 takeRequest(faculty);
                 return;
@@ -229,12 +264,31 @@ void Library::takeRequest(Student &student)
             borrowBook(isbn, student);
         }
     }
+    else if (choice == 2)
+    {
+        std::cout << "Enter Name of the publication: " << std::endl;
+        std::string publication;
+        cin.ignore();              // Clear the input buffer
+        getline(cin, publication); // Read the entire line
+        borrowMagazine(publication, student);
+    }
+    else if (choice == 3)
+    {
+        std::cout << "Enter Name of the Journal: " << std::endl;
+        std::string journal;
+        cin.ignore();          // Clear the input buffer
+        getline(cin, journal); // Read the entire line
+        downloadJournal(journal, student);
+    }
+    else
+    {
+        std::cout << "Invalid Input!!! try again." << std::endl;
+        takeRequest(student);
+    }
 }
 
 void Library::takeRequest(Faculty &faculty)
 {
-    std::cout << "----------Thank You---------- \n\n"
-              << std::endl;
     std::cout << "What operation you want to perform?\n1. Borrow Book\n2. Borrow Magzine\n3. Download journal " << std::endl;
 
     int choice;
@@ -252,13 +306,40 @@ void Library::takeRequest(Faculty &faculty)
             borrowBook(isbn, faculty);
         }
     }
+    else if (choice == 2)
+    {
+        std::cout << "Enter Name of the publication: " << std::endl;
+        std::string publication;
+        cin.ignore();              // Clear the input buffer
+        getline(cin, publication); // Read the entire line
+        borrowMagazine(publication, faculty);
+    }
+    else if (choice == 3)
+    {
+        std::cout << "Enter Name of the Journal: " << std::endl;
+        std::string journal;
+        cin.ignore();          // Clear the input buffer
+        getline(cin, journal); // Read the entire line
+
+        downloadJournal(journal, faculty);
+    }
+    else
+    {
+        std::cout << "Invalid Input!!! try again." << std::endl;
+        takeRequest(faculty);
+    }
 }
 
-void Library::printAllLogs() {
-    for (int i = 0; i < log_count; ++i) {
-        std::cout << "User ID: " << logs[i].userId << std::endl;
-        std::cout << "Item ID: " << logs[i].itemId << std::endl;
-        std::cout << "Borrow Time: " << logs[i].borrowTime << std::endl;
-        std::cout << "-------------------" << std::endl;
+void Library::printAllLogs()
+{
+    for (int i = 0; i < log_count; ++i)
+    {
+        std::cout << "User ID: " << logs[i].userId << std::endl;         // Print User ID
+        std::cout << "User Name: " << logs[i].userName << std::endl;     // Print User Name
+        std::cout << "Item ID: " << logs[i].itemId << std::endl;         // Print Item ID
+        std::cout << "Item Name: " << logs[i].itemName << std::endl;     // Print Item Name
+        std::cout << "Borrow Time: " << logs[i].borrowTime << std::endl; // Print Borrow Time
+        std::cout << "Due Time: " << logs[i].dueTime << std::endl;       // Print Due Time
+        std::cout << "-------------------" << std::endl;                 // Separator
     }
 }

@@ -1,5 +1,5 @@
-#ifndef ABSTRACTUSER_H
-#define ABSTRACTUSER_H
+#ifndef USER_H
+#define USER_H
 
 using namespace std;
 

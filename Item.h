@@ -1,5 +1,5 @@
-#ifndef ABSTRACTITEM_H
-#define ABSTRACTITEM_H
+#ifndef ITEM_H
+#define ITEM_H
 
 #include <string>
 
